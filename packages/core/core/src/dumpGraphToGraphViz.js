@@ -90,6 +90,7 @@ export default function dumpGraphToGraphViz(
   }
   // $FlowFixMe
   if (process.browser) {
+    // $FlowFixMe
     globalThis.PARCEL_DUMP_GRAPHVIZ(name, g.to_dot());
   } else {
     // const tempy = require('tempy');

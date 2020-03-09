@@ -5,7 +5,7 @@ import {Buffer} from 'buffer';
 let _serialize = v => Buffer.from(teleport.stringify(v)),
   _deserialize = v => teleport.parse(v.toString('utf8'));
 
-// $FlowFixMe - flow doesn't know about this method yet
+// $FlowFixMe
 if (!process.browser) {
   try {
     const v8 = require('v8');
@@ -70,7 +70,8 @@ function shallowCopy(object: any) {
 function isBuffer(object) {
   return (
     object.buffer instanceof ArrayBuffer ||
-    object.buffer instanceof SharedArrayBuffer
+    (typeof SharedArrayBuffer !== 'undefined' &&
+      object.buffer instanceof SharedArrayBuffer)
   );
 }
 

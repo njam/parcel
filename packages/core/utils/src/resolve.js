@@ -28,12 +28,7 @@ export async function resolve(
     ...ResolveOptions,
   |},
 ): Promise<ResolveResult> {
-  if (
-    // $FlowFixMe
-    process.browser &&
-    id.startsWith('@parcel/') &&
-    id !== '@parcel/watcher'
-  ) {
+  if (id.startsWith('@parcel/') && id !== '@parcel/watcher') {
     return {
       resolved: id,
       pkg: {

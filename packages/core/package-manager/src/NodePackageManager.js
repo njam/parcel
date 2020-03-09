@@ -91,7 +91,7 @@ export class NodePackageManager implements PackageManager {
 
   load(resolved: FilePath, from: FilePath): any {
     // $FlowFixMe
-    if (process.browser && resolved in BUILTINS) {
+    if (resolved in BUILTINS) {
       return BUILTINS[resolved];
     }
 

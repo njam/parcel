@@ -8,7 +8,7 @@ import semver from 'semver';
 
 import {version as _PARCEL_VERSION} from '../package.json';
 // $FlowFixMe
-const PARCEL_VERSION = process.browser ? '2.0.0-repl' : _PARCEL_VERSION;
+const PARCEL_VERSION = '2.0.0-repl';
 
 export default async function loadPlugin(
   packageManager: PackageManager,

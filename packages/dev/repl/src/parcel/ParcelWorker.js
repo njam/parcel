@@ -40,8 +40,8 @@ expose({
 });
 
 async function bundle(assets, options) {
-  // $FlowFixMe
   let graphs = options.showGraphs && [];
+  // $FlowFixMe
   globalThis.PARCEL_DUMP_GRAPHVIZ =
     graphs && ((name, content) => graphs.push({name, content}));
 
