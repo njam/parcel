@@ -161,6 +161,7 @@ export default class Parcel {
 
     if (!this.#initialOptions.workerFarm) {
       // If there wasn't a workerFarm passed in, we created it. End the farm.
+      // TODO running run() again now will not work!
       await this.#farm.end();
     }
 

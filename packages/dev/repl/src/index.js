@@ -191,6 +191,7 @@ function App() {
     e => {
       if (e.metaKey) {
         if (e.code === 'Enter' || e.code === 'KeyB') {
+          e.preventDefault();
           startBundling();
         } else if (e.code === 'KeyS') {
           e.preventDefault();
