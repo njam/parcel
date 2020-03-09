@@ -15,9 +15,20 @@ import packageJSON from '../package.json';
 import WorkerFarm, {Handle} from '@parcel/workers';
 import nullthrows from 'nullthrows';
 
-// TODO: actually test if postMessage(sharedArrayBuffer) works (e.g. older Firefox)
-let SharedBuffer =
-  typeof SharedArrayBuffer !== 'undefined' ? SharedArrayBuffer : ArrayBuffer;
+let DataBuffer = ArrayBuffer;
+// Safari has removed the constructor
+if (typeof SharedArrayBuffer !== 'undefined') {
+  let channel = new MessageChannel();
+  try {
+    // Firefox might throw when sending the Buffer over a MessagePort
+    channel.port1.postMessage(new SharedArrayBuffer());
+    DataBuffer = SharedArrayBuffer;
+  } catch (_) {
+  } finally {
+    channel.port1.close();
+    channel.port2.close();
+  }
+}
 
 const instances = new Map();
 let id = 0;
@@ -839,12 +850,12 @@ class Directory extends Entry {
 }
 
 function makeShared(contents: Buffer | string): Buffer {
-  if (typeof contents !== 'string' && contents.buffer instanceof SharedBuffer) {
+  if (typeof contents !== 'string' && contents.buffer instanceof DataBuffer) {
     return contents;
   }
 
   let length = Buffer.byteLength(contents);
-  let shared = new SharedBuffer(length);
+  let shared = new DataBuffer(length);
   let buffer = Buffer.from(shared);
   if (typeof contents === 'string') {
     buffer.write(contents);
