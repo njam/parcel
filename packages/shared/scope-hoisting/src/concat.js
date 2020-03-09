@@ -16,13 +16,13 @@ import {
   isForInStatement,
   isForOfStatement,
   isForStatement,
+  isVariableDeclaration,
 } from '@babel/types';
 import traverse from '@babel/traverse';
 import {simple as walkSimple} from '@parcel/babylon-walk';
 import invariant from 'assert';
 import fs from 'fs';
 import nullthrows from 'nullthrows';
-import invariant from 'assert';
 import {PromiseQueue} from '@parcel/utils';
 import {assertString, getName, getIdentifier, needsPrelude} from './utils';
 
