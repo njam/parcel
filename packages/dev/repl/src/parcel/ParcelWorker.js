@@ -41,7 +41,9 @@ expose({
 
 async function bundle(assets, options) {
   // $FlowFixMe
-  globalThis.PARCEL_DUMP_GRAPHVIZ = options.showGraphs;
+  let graphs = options.showGraphs && [];
+  globalThis.PARCEL_DUMP_GRAPHVIZ =
+    graphs && ((name, content) => graphs.push({name, content}));
 
   // globalThis.PARCEL_JSON_LOGGER_STDOUT = async d => {
   //   switch (d.type) {
@@ -81,6 +83,7 @@ async function bundle(assets, options) {
   // $FlowFixMe
   let fs: MemoryFS = memFS;
 
+  // TODO only create new instance if options/entries changed
   let entries = assets.filter(v => v.isEntry).map(v => `/src/${v.name}`);
   const b = new Parcel({
     entries,
@@ -128,5 +131,5 @@ async function bundle(assets, options) {
     output.push({name, content: await fs.readFile(`/dist/${name}`, 'utf8')});
   }
 
-  return output;
+  return {assets: output, graphs};
 }

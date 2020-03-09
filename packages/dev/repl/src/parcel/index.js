@@ -6,7 +6,19 @@ const worker = wrap(
 // const worker = {
 //   ready: Promise.resolve(true),
 //   bundle(assets) {
-//     return assets;
+//     return {
+//       assets,
+//       graphs: [
+//         {
+//           name: "test",
+//           content: `digraph graphname
+// {
+//     a -> b -> c;
+//     b -> d;
+// }`,
+//         },
+//       ],
+//     };
 //   },
 // };
 

@@ -9,7 +9,7 @@ import {useState, useEffect, useCallback, useReducer} from 'preact/hooks';
 import Asset from './components/Asset';
 import Options from './components/Options';
 // import Preview from './components/Preview';
-import {ParcelError, Notes} from './components/helper';
+import {ParcelError, Notes, Graphs} from './components/helper';
 
 import filesize from 'filesize';
 import {
@@ -144,17 +144,17 @@ function App() {
     saveState(currentPreset, options, assetsDebounced);
   }, [currentPreset, options, assetsDebounced]);
   // const hashChangeCb = useCallback(() => {
-  // 	let state = loadState();
-  // 	if (state) {
-  // 		console.log(state)
-  // 		setAssets(state.assets);
-  // 		setOptions(state.options);
-  // 		setCurrentPreset(state.currentPreset);
-  // 	}
+  //  let state = loadState();
+  //  if (state) {
+  //    console.log(state)
+  //    setAssets(state.assets);
+  //    setOptions(state.options);
+  //    setCurrentPreset(state.currentPreset);
+  //  }
   // }, []);
   // useEffect(() => {
-  // 	window.addEventListener("hashchange", hashChangeCb);
-  // 	return () => window.removeEventListener("hashchange", hashChangeCb);
+  //  window.addEventListener("hashchange", hashChangeCb);
+  //  return () => window.removeEventListener("hashchange", hashChangeCb);
   // }, []);
 
   const startBundling = useCallback(async () => {
@@ -307,36 +307,44 @@ function App() {
         {(() => {
           if (bundlingState instanceof Error) {
             return <ParcelError error={bundlingState} />;
-          } else {
-            return output ? (
-              <Fragment>
-                {output.map(({name, content}) => (
-                  <Asset
-                    key={name}
-                    name={name.trim()}
-                    content={content}
-                    additionalHeader={
-                      <div class="outputSize">{filesize(content.length)}</div>
-                    }
-                  />
-                ))}
-                {/* <Preview assets={assets} output={output} options={options} /> */}
-              </Fragment>
-            ) : (
-              <div class="file gettingStarted">
-                <div>
-                  Click on{' '}
-                  <button
-                    class="start"
-                    disabled={bundlingState === BUNDLING_RUNNING}
-                    onClick={startBundling}
-                  >
-                    Bundle!
-                  </button>{' '}
-                  to get started!
+          } else if (bundlingState !== BUNDLING_RUNNING) {
+            if (output) {
+              return (
+                <Fragment>
+                  {output.assets.map(({name, content}) => (
+                    <Asset
+                      key={name}
+                      name={name.trim()}
+                      content={content}
+                      additionalHeader={
+                        <div class="outputSize">{filesize(content.length)}</div>
+                      }
+                    />
+                  ))}
+                  {output.graphs && <Graphs graphs={output.graphs} />}
+                  {/* <Preview assets={assets} output={output} options={options} /> */}
+                  <button disabled onClick={downloadZip}>
+                    Download ZIP
+                  </button>
+                </Fragment>
+              );
+            } else {
+              return (
+                <div class="file gettingStarted">
+                  <div>
+                    Click on{' '}
+                    <button
+                      class="start"
+                      disabled={bundlingState === BUNDLING_RUNNING}
+                      onClick={startBundling}
+                    >
+                      Bundle!
+                    </button>{' '}
+                    to get started!
+                  </div>
                 </div>
-              </div>
-            );
+              );
+            }
           }
         })()}
         {installPrompt && (
@@ -344,7 +352,6 @@ function App() {
             Want to add this to your homescreen?
           </button>
         )}
-        {output && <button onClick={downloadZip}>Download ZIP</button>}
       </div>
     </div>
   );

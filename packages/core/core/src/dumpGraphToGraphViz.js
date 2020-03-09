@@ -90,9 +90,7 @@ export default function dumpGraphToGraphViz(
   }
   // $FlowFixMe
   if (process.browser) {
-    console.groupCollapsed(`Graph ${name}`);
-    console.log(g.to_dot());
-    console.groupEnd();
+    globalThis.PARCEL_DUMP_GRAPHVIZ(name, g.to_dot());
   } else {
     // const tempy = require('tempy');
     // let tmp = tempy.file({name: `${name}.png`});

@@ -87,7 +87,7 @@ export default function Options({values, onChange, enableBrowserslist}) {
         </div>
       </label>
       <label title="env variable PARCEL_DUMP_GRAPHVIZ">
-        <span>Show Graphs</span>
+        <span>Render Graphs</span>
         <input
           type="checkbox"
           checked={values.showGraphs}

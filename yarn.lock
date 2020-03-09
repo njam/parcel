@@ -1772,6 +1772,11 @@
   resolved "https://registry.yarnpkg.com/@mischnic/codemirror-preact/-/codemirror-preact-0.0.3.tgz#f54e7fbebb5aee975bc24ed799d164d0eb4a9a2a"
   integrity sha512-YtmbIdkuB40lf5odsoEE1sJ58djqtHClXRh5W56rNEzJtVJi1/vsrEgL5xRaSlAj0J0if9wB9oT2FhmxuXtjfw==
 
+"@mischnic/dot-svg@^0.0.0":
+  version "0.0.0"
+  resolved "https://registry.yarnpkg.com/@mischnic/dot-svg/-/dot-svg-0.0.0.tgz#7fc987217e681159358b246be44aa13a8499240d"
+  integrity sha512-PLtR0TPyM+vOaPilp2oLjAM7vXynwrCwQIpW4689+DJJKxUrSo9CM3pdllfy1+jNoZz0dEOzUisblnRYiOUXcQ==
+
 "@mischnic/pako@^1.0.10":
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/@mischnic/pako/-/pako-1.0.10.tgz#887f4df17450c15eae90cb35d9d2e787b19c6aaf"
