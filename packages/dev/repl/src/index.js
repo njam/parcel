@@ -321,7 +321,7 @@ function App() {
                     />
                   ))}
                   {output.graphs && <Graphs graphs={output.graphs} />}
-                  {/* <Preview assets={assets} output={output} options={options} /> */}
+                  {/* <Preview output={output.assets} options={options} /> */}
                   <button disabled onClick={downloadZip}>
                     Download ZIP
                   </button>
