@@ -33,16 +33,16 @@ export async function resolveConfig(
 ): Promise<FilePath | null> {
   filepath = await fs.realpath(path.dirname(filepath));
 
-  // Don't traverse above the module root
-  if (filepath === root || path.basename(filepath) === 'node_modules') {
-    return null;
-  }
-
   for (const filename of filenames) {
     let file = path.join(filepath, filename);
     if ((await fs.exists(file)) && (await fs.stat(file)).isFile()) {
       return file;
     }
+  }
+
+  // Don't traverse above the module root
+  if (filepath === root || path.basename(filepath) === 'node_modules') {
+    return null;
   }
 
   return resolveConfig(fs, filepath, filenames, opts);

@@ -1,4 +1,13 @@
-import {useState, useEffect} from 'preact/hooks';
+export function getDefaultTargetEnv(type) {
+  switch (type) {
+    case 'node':
+      return '10';
+    case 'browsers':
+      return '> 0.25%';
+    default:
+      throw new Error(`Missing default target env for ${type}`);
+  }
+}
 
 export function hasBrowserslist(assets) {
   const configExists = assets.some(
@@ -213,19 +222,3 @@ h2 {
     },
   ],
 };
-
-export function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}

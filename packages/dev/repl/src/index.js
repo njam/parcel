@@ -9,7 +9,7 @@ import {useState, useEffect, useCallback, useReducer} from 'preact/hooks';
 import Asset from './components/Asset';
 import Options from './components/Options';
 // import Preview from './components/Preview';
-import {ParcelError, Notes, Graphs} from './components/helper';
+import {ParcelError, Notes, Graphs, useDebounce} from './components/helper';
 
 import filesize from 'filesize';
 import {
@@ -17,7 +17,6 @@ import {
   hasBrowserslist,
   saveState,
   loadState,
-  useDebounce,
   // downloadBuffer
 } from './utils';
 import {bundle, workerLoaded} from './parcel/';
@@ -118,9 +117,8 @@ function App() {
       scopeHoist: true,
       sourceMaps: false,
       publicUrl: '',
-      targetType: 'browser',
-      targetEnv: '',
-      global: '',
+      targetType: 'browsers',
+      targetEnv: null,
       showGraphs: false,
     },
   );

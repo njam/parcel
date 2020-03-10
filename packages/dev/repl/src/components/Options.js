@@ -1,7 +1,8 @@
 // eslint-disable-next-line no-unused-vars
 import {h} from 'preact';
+import {getDefaultTargetEnv} from '../utils';
 
-export default function Options({values, onChange, enableBrowserslist}) {
+export default function Options({values, onChange, hasConfig}) {
   return (
     <div class="options file">
       <label title="Sets `--no-minify`">
@@ -28,37 +29,7 @@ export default function Options({values, onChange, enableBrowserslist}) {
           onChange={e => onChange('sourceMaps', e.target.checked)}
         />
       </label>
-      {/*<label title="Sets `--no-content-hash`">
-        Content hashing (as opposed to path-based)
-        <input
-          type="checkbox"
-          checked={values.contentHash}
-          onChange={e => onChange("contentHash", e.target.checked)}
-        />
-      </label>*/}
-      <label title="Not an actual CLI option, put this into .browserslistrc 😁">
-        <span>
-          Browserslist target, i.e.: <code>Chrome 70</code>
-        </span>
-        <input
-          type="text"
-          value={enableBrowserslist ? values.browserslist : undefined}
-          disabled={!enableBrowserslist}
-          placeholder={
-            enableBrowserslist ? '> 0.25%' : "You've already specified a config"
-          }
-          onInput={e => onChange('browserslist', e.target.value)}
-        />
-      </label>
-      {/*<label title="Sets `--global <value>`">
-        Global (expose module as UMD)
-        <input
-          type="text"
-          placeholder="[disabled]"
-          onInput={e => onChange("global", e.target.value)}
-        />
-      </label>*/}
-      <label title="Gets set as `--public-url <value>`">
+      <label title="Sets `--public-url <value>`">
         <span>Public URL</span>
         <input
           type="text"
@@ -71,18 +42,21 @@ export default function Options({values, onChange, enableBrowserslist}) {
         <span>Target</span>
         <div>
           <select
-            onChange={e => onChange('targetType', e.target.value)}
+            onChange={e => {
+              onChange('targetType', e.target.value);
+              onChange('targetEnv', null);
+            }}
             value={values.targetType}
             style={{marginRight: '0.5rem'}}
           >
-            <option value="browser">Browser</option>
+            <option value="browsers">Browsers</option>
             <option value="node">Node</option>
-            <option value="electron">Electron</option>
           </select>
           <input
             type="text"
             value={values.targetEnv}
             onInput={e => onChange('targetEnv', e.target.value)}
+            placeholder={getDefaultTargetEnv(values.targetType)}
           />
         </div>
       </label>

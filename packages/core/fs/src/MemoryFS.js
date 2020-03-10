@@ -1,4 +1,5 @@
 // @flow
+/* global MessageChannel:readonly */
 
 import type {FileSystem, FileOptions, ReaddirOptions} from './types';
 import type {FilePath} from '@parcel/types';
@@ -21,9 +22,8 @@ if (typeof SharedArrayBuffer !== 'undefined') {
   let channel = new MessageChannel();
   try {
     // Firefox might throw when sending the Buffer over a MessagePort
-    channel.port1.postMessage(new SharedArrayBuffer());
+    channel.port1.postMessage(new SharedArrayBuffer(0));
     DataBuffer = SharedArrayBuffer;
-  } catch (_) {
   } finally {
     channel.port1.close();
     channel.port2.close();
@@ -671,9 +671,10 @@ class WriteStream extends Writable {
   }
 
   _final(callback: (error?: Error) => void) {
-    this.fs
-      .writeFile(this.filePath, this.buffer, this.options)
-      .then(() => callback(), err => callback(err));
+    this.fs.writeFile(this.filePath, this.buffer, this.options).then(
+      () => callback(),
+      err => callback(err),
+    );
   }
 
   get bytesWritten() {

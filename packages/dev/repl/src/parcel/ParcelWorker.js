@@ -9,11 +9,15 @@ import Parcel from '@parcel/core';
 import memFS from 'fs';
 import workerFarm from '../../workerFarm.js';
 // import {prettifyTime} from '@parcel/utils';
+import {getDefaultTargetEnv} from '../utils.js';
 
 const defaultConfig = {
   bundler: '@parcel/bundler-default',
   transformers: {
-    '*.{js,mjs,jsm,jsx,es6,ts,tsx}': ['@parcel/transformer-js'],
+    '*.{js,mjs,jsm,jsx,es6,ts,tsx}': [
+      '@parcel/transformer-babel',
+      '@parcel/transformer-js',
+    ],
     'url:*': ['@parcel/transformer-raw'],
   },
   namers: ['@parcel/namer-default'],
@@ -31,7 +35,7 @@ const defaultConfig = {
     '*': '@parcel/packager-raw',
   },
   resolvers: ['@parcel/resolver-default'],
-  reporters: ['@parcel/reporter-json'],
+  // reporters: ['@parcel/reporter-json'],
 };
 
 expose({
@@ -93,7 +97,6 @@ async function bundle(assets, options) {
     logLevel: 'verbose',
     defaultConfig: {
       ...defaultConfig,
-      reporters: ['@parcel/reporter-json'],
       filePath: '/',
     },
     hot: false,
@@ -107,17 +110,19 @@ async function bundle(assets, options) {
     //   new SimplePackageInstaller(memFS),
     // ),
     defaultEngines: {
-      browsers: ['last 1 Chrome version'],
-      node: '10',
+      browsers: ['>= 0.25%'],
+      node: '8',
     },
   });
 
-  await fs.writeFile(
-    '/package.json',
-    JSON.stringify({
-      engines: {node: '12'},
-    }),
-  );
+  let packageJson = {
+    engines: {
+      [options.targetType]:
+        options.targetEnv || getDefaultTargetEnv(options.targetType),
+    },
+  };
+  await fs.writeFile('/package.json', JSON.stringify(packageJson));
+
   await fs.mkdirp('/src');
   for (let {name, content} of assets) {
     await fs.writeFile(`/src/${name}`, content);

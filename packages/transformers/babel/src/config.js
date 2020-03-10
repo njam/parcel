@@ -246,12 +246,18 @@ async function definePluginDependencies(config) {
   let configItems = [...babelConfig.presets, ...babelConfig.plugins];
   await Promise.all(
     configItems.map(async configItem => {
-      let pkg = nullthrows(
-        await config.getConfigFrom(configItem.file.resolved, ['package.json'], {
-          parse: true,
-        }),
-      );
-      config.addDevDependency(pkg.name, pkg.version);
+      if (configItem.file) {
+        let pkg = nullthrows(
+          await config.getConfigFrom(
+            configItem.file.resolved,
+            ['package.json'],
+            {
+              parse: true,
+            },
+          ),
+        );
+        config.addDevDependency(pkg.name, pkg.version);
+      }
     }),
   );
 }

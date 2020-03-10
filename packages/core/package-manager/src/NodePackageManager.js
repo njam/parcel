@@ -32,6 +32,7 @@ import packagerRaw from '@parcel/packager-raw';
 import reporterJson from '@parcel/reporter-json';
 import resolverDefault from '@parcel/resolver-default';
 import runtimeJs from '@parcel/runtime-js';
+import transformerBabel from '@parcel/transformer-babel';
 import transformerJS from '@parcel/transformer-js';
 import transformerRaw from '@parcel/transformer-raw';
 
@@ -44,6 +45,7 @@ const BUILTINS = {
   '@parcel/reporter-json': reporterJson,
   '@parcel/resolver-default': resolverDefault,
   '@parcel/runtime-js': runtimeJs,
+  '@parcel/transformer-babel': transformerBabel,
   '@parcel/transformer-js': transformerJS,
   '@parcel/transformer-raw': transformerRaw,
 };
