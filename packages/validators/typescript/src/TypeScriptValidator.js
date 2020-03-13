@@ -117,11 +117,13 @@ export default new Validator({
 
             codeframe = {
               code: source,
-              codeHighlights: {
-                start,
-                end,
-                message: diagnosticMessage,
-              },
+              codeHighlights: [
+                {
+                  start,
+                  end,
+                  message: diagnosticMessage,
+                },
+              ],
             };
           }
         }
