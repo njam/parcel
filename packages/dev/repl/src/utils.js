@@ -3,7 +3,7 @@ export function getDefaultTargetEnv(type) {
     case 'node':
       return '10';
     case 'browsers':
-      return '> 0.25%';
+      return 'since 2017';
     default:
       throw new Error(`Missing default target env for ${type}`);
   }

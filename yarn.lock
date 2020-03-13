@@ -1767,10 +1767,10 @@
   resolved "https://registry.yarnpkg.com/@mdx-js/util/-/util-1.5.5.tgz#6f88bcb847ebd0117fc81bcd26b83220062fd881"
   integrity sha512-IudQkyZuM8T1CrSX9r0ShPXCABjtEtyrV4lxQqhKAwFqw1aYpy/5LOZhitMLoJTybZPVdPotuh+zjqYy9ZOSbA==
 
-"@mischnic/codemirror-preact@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@mischnic/codemirror-preact/-/codemirror-preact-0.0.3.tgz#f54e7fbebb5aee975bc24ed799d164d0eb4a9a2a"
-  integrity sha512-YtmbIdkuB40lf5odsoEE1sJ58djqtHClXRh5W56rNEzJtVJi1/vsrEgL5xRaSlAj0J0if9wB9oT2FhmxuXtjfw==
+"@mischnic/codemirror-preact@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@mischnic/codemirror-preact/-/codemirror-preact-0.0.5.tgz#d4a6983158b7fd9f3b9c1da07c0a6e2437451a08"
+  integrity sha512-YrbFpM0y/aaIWtEndADtrhrj0KwwchVNoeBsPByr+N7W05nhLARu2H8+tIE8LNBxXbudGBvjen6B9lRGTU+wog==
 
 "@mischnic/dot-svg@^0.0.0":
   version "0.0.0"

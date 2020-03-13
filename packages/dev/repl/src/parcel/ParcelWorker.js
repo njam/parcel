@@ -42,7 +42,7 @@ const defaultConfig = {
     '*': '@parcel/packager-raw',
   },
   resolvers: ['@parcel/resolver-default'],
-  // reporters: ['@parcel/reporter-json'],
+  reporters: ['@parcel/reporter-json'],
 };
 
 expose({
@@ -56,38 +56,42 @@ async function bundle(assets, options) {
   globalThis.PARCEL_DUMP_GRAPHVIZ =
     graphs && ((name, content) => graphs.push({name, content}));
 
-  // globalThis.PARCEL_JSON_LOGGER_STDOUT = async d => {
-  //   switch (d.type) {
-  //     case 'buildStart':
-  //       console.log('📦 Started');
-  //       break;
-  //     case 'buildProgress': {
-  //       let phase = d.phase.charAt(0).toUpperCase() + d.phase.slice(1);
-  //       let filePath = d.filePath || d.bundleFilePath;
-  //       console.log(`🕓 ${phase} ${filePath ? filePath : ''}`);
-  //       break;
-  //     }
-  //     case 'buildSuccess':
-  //       console.log(`✅ Succeded in ${prettifyTime(d.buildTime)}`);
-
-  //       console.group('Output');
-  //       for (let {filePath} of d.bundles) {
-  //         console.log(
-  //           '%c%s:\n%c%s',
-  //           'font-weight: bold',
-  //           filePath,
-  //           'font-family: monospace',
-  //           await memFS.readFile(filePath, 'utf8'),
-  //         );
-  //       }
-  //       console.groupEnd();
-  //       break;
-  //     case 'buildFailure':
-  //       console.log(`❗️`, d.diagnostics);
-  //       break;
-  //   }
-  // };
-  // globalThis.PARCEL_JSON_LOGGER_STDERR = globalThis.PARCEL_JSON_LOGGER_STDOUT;
+  const resultFromReporter = new Promise((res, rej) => {
+    globalThis.PARCEL_JSON_LOGGER_STDOUT = d => {
+      switch (d.type) {
+        // case 'buildStart':
+        //   console.log('📦 Started');
+        //   break;
+        // case 'buildProgress': {
+        //   let phase = d.phase.charAt(0).toUpperCase() + d.phase.slice(1);
+        //   let filePath = d.filePath || d.bundleFilePath;
+        //   console.log(`🕓 ${phase} ${filePath ? filePath : ''}`);
+        //   break;
+        // }
+        case 'buildSuccess':
+          // console.log(`✅ Succeded in ${/* prettifyTime */ d.buildTime}`);
+          // console.group('Output');
+          // for (let {filePath} of d.bundles) {
+          //   console.log(
+          //     '%c%s:\n%c%s',
+          //     'font-weight: bold',
+          //     filePath,
+          //     'font-family: monospace',
+          //     await memFS.readFile(filePath, 'utf8'),
+          //   );
+          // }
+          // console.groupEnd();
+          res(d);
+          break;
+        case 'buildFailure': {
+          // console.log(`❗️`, d);
+          rej(d.message);
+          break;
+        }
+      }
+    };
+    globalThis.PARCEL_JSON_LOGGER_STDERR = globalThis.PARCEL_JSON_LOGGER_STDOUT;
+  });
 
   // $FlowFixMe
   globalThis.memFS = memFS;
@@ -137,12 +141,26 @@ async function bundle(assets, options) {
   }
   await fs.rimraf(`/dist`);
 
-  await b.run();
-
-  let output = [];
-  for (let name of await fs.readdir(`/dist`)) {
-    output.push({name, content: await fs.readFile(`/dist/${name}`, 'utf8')});
+  try {
+    await b.run();
+  } catch (_) {
+    // we get the error from PARCEL_JSON_LOGGER_STDOUT
   }
 
-  return {assets: output, graphs};
+  try {
+    let {buildTime, bundles} = await resultFromReporter;
+    let bundleContents = [];
+    for (let {filePath, size, time} of bundles) {
+      bundleContents.push({
+        name: filePath.replace(/^\/dist\//, ''),
+        content: await fs.readFile(filePath, 'utf8'),
+        size,
+        time,
+      });
+    }
+
+    return {bundles: bundleContents, graphs, buildTime};
+  } catch (error) {
+    return {error};
+  }
 }

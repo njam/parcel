@@ -23,7 +23,7 @@ const writeToStderr = (d, filter) => {
   if (globalThis.PARCEL_JSON_LOGGER_STDOUT) {
     globalThis.PARCEL_JSON_LOGGER_STDERR(d, filter);
   } else {
-    errorWriter(d, filter);
+    errorWriter(d[0].message, filter);
   }
 };
 /* eslint-enable no-console */
@@ -51,7 +51,7 @@ export default new Reporter({
       case 'buildFailure':
         if (LOG_LEVELS[logLevelFilter] >= LOG_LEVELS.error) {
           writeToStderr(
-            {type: 'buildFailure', message: event.diagnostics[0].message},
+            {type: 'buildFailure', message: event.diagnostics},
             logLevelFilter,
           );
         }

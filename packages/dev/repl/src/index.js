@@ -21,12 +21,22 @@ import {
 } from './utils';
 import {bundle, workerLoaded} from './parcel/';
 
+function nthIndex(str, pat, n) {
+  var L = str.length,
+    i = -1;
+  while (n-- && i++ < L) {
+    i = str.indexOf(pat, i);
+    if (i < 0) break;
+  }
+  return i;
+}
+
 async function downloadZip() {
   //   downloadBuffer('Parcel-REPL.zip', await getZip());
 }
 
 const BUNDLING_RUNNING = Symbol('BUNDLING_RUNNING');
-const BUNDLING_SUCCESS = Symbol('BUNDLING_SUCCESS');
+const BUNDLING_FINISHED = Symbol('BUNDLING_FINISHED');
 
 const WORKER_STATE_LOADING = Symbol('WORKER_STATE_LOADING');
 const WORKER_STATE_SUCCESS = Symbol('WORKER_STATE_SUCCESS');
@@ -45,8 +55,10 @@ function assetsReducer(assets, action) {
     if (prop === 'name' && assets.find(a => a.name === value)) {
       return [...assets];
     } else {
-      if (prop === 'content')
+      if (prop === 'content') {
         assets = updateAssets(assets, name, 'time', Date.now());
+        assets = updateAssets(assets, name, 'diagnostics', null);
+      }
       return updateAssets(assets, name, prop, value);
     }
   } else if (action.type === 'removeAsset') {
@@ -93,6 +105,12 @@ assetsReducer.changeEntry = (name, isEntry) => ({
   prop: 'isEntry',
   value: isEntry,
 });
+assetsReducer.addDiagnostics = (name, diagnostics) => ({
+  type: 'updateAsset',
+  name,
+  prop: 'diagnostics',
+  value: diagnostics,
+});
 assetsReducer.remove = name => ({type: 'removeAsset', name});
 assetsReducer.add = () => ({type: 'addAsset'});
 
@@ -127,7 +145,7 @@ function App() {
     initialHashState.currentPreset || DEFAULT_PRESET,
   );
 
-  const [bundlingState, setBundlingState] = useState(BUNDLING_SUCCESS);
+  const [bundlingState, setBundlingState] = useState(BUNDLING_FINISHED);
   const [workerState, setWorkerState] = useState(WORKER_STATE_LOADING);
   workerLoaded.then(
     () => setWorkerState(WORKER_STATE_SUCCESS),
@@ -177,11 +195,45 @@ function App() {
       // // }
       // // });
 
-      setBundlingState(BUNDLING_SUCCESS);
+      setBundlingState(BUNDLING_FINISHED);
       setOutput(bundleOutput);
+      if (bundleOutput.error) {
+        let diagnostics = new Map(); // asset -> Array<Diagnostic>
+        for (let diagnostic of bundleOutput.error) {
+          if (diagnostic.codeFrame) {
+            let list = diagnostics.get(diagnostic.filePath);
+            if (!list) {
+              list = [];
+              diagnostics.set(diagnostic.filePath, list);
+            }
+
+            let {start, end} = diagnostic.codeFrame.codeHighlights[0];
+            start.line--;
+            end.line--;
+
+            let from =
+              nthIndex(diagnostic.codeFrame.code, '\n', start.line) +
+              start.column;
+            let to =
+              nthIndex(diagnostic.codeFrame.code, '\n', end.line) + end.column;
+
+            list.push({
+              from,
+              to,
+              severity: 'error',
+              source: diagnostic.origin,
+              message: diagnostic.message,
+            });
+          }
+        }
+        for (let [asset, assetDiagnostics] of diagnostics) {
+          setAssets(
+            assetsReducer.addDiagnostics(asset.slice(1), assetDiagnostics),
+          );
+        }
+      }
     } catch (error) {
-      setBundlingState(error);
-      console.error(error);
+      console.error('Unexpected error', error);
     }
   }, [bundlingState, assets, options]);
 
@@ -267,7 +319,7 @@ function App() {
             ))}
           </select>
         </label>
-        {assets.map(({name, content, isEntry}, i) => (
+        {assets.map(({name, content, isEntry, diagnostics}, i) => (
           <Asset
             key={i}
             name={name}
@@ -278,6 +330,7 @@ function App() {
             isEntry={isEntry}
             onChangeEntry={changeAssetEntryCb}
             onClickRemove={removeAssetCb}
+            diagnostics={diagnostics}
           />
         ))}
         <button class="addAsset" onClick={addAssetCb}>
@@ -304,29 +357,31 @@ function App() {
           <div class="loadState loading">Parcel is being loaded...</div>
         )}
         {(() => {
-          if (bundlingState instanceof Error) {
-            return <ParcelError error={bundlingState} />;
-          } else if (bundlingState !== BUNDLING_RUNNING) {
+          if (bundlingState === BUNDLING_FINISHED) {
             if (output) {
-              return (
-                <Fragment>
-                  {output.assets.map(({name, content}) => (
-                    <Asset
-                      key={name}
-                      name={name.trim()}
-                      content={content}
-                      additionalHeader={
-                        <div class="outputSize">{filesize(content.length)}</div>
-                      }
-                    />
-                  ))}
-                  {output.graphs && <Graphs graphs={output.graphs} />}
-                  {/* <Preview output={output.assets} options={options} /> */}
-                  <button disabled onClick={downloadZip}>
-                    Download ZIP
-                  </button>
-                </Fragment>
-              );
+              if (output.bundles) {
+                return (
+                  <Fragment>
+                    {output.bundles.map(({name, content, size}) => (
+                      <Asset
+                        key={name}
+                        name={name.trim()}
+                        content={content}
+                        additionalHeader={
+                          <div class="outputSize">{filesize(size)}</div>
+                        }
+                      />
+                    ))}
+                    {output.graphs && <Graphs graphs={output.graphs} />}
+                    {/* <Preview output={output.assets} options={options} /> */}
+                    <button disabled onClick={downloadZip}>
+                      Download ZIP
+                    </button>
+                  </Fragment>
+                );
+              } else {
+                return <ParcelError error={output.error} />;
+              }
             } else {
               return (
                 <div class="file gettingStarted">

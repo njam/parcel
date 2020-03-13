@@ -42,7 +42,6 @@ import transformerJson from '@parcel/transformer-json';
 import transformerPostcss from '@parcel/transformer-postcss';
 import transformerPosthtml from '@parcel/transformer-posthtml';
 import transformerRaw from '@parcel/transformer-raw';
-
 const BUILTINS = {
   '@parcel/bundler-default': bundlerDefault,
   '@parcel/namer-default': namerDefault,
@@ -63,6 +62,27 @@ const BUILTINS = {
   '@parcel/transformer-posthtml': transformerPosthtml,
   '@parcel/transformer-raw': transformerRaw,
 };
+
+// const BUILTINS = {
+//   '@parcel/bundler-default': import('@parcel/bundler-default'),
+//   '@parcel/namer-default': import('@parcel/namer-default'),
+//   '@parcel/optimizer-terser': import('@parcel/optimizer-terser'),
+//   '@parcel/packager-css': import('@parcel/packager-css'),
+//   '@parcel/packager-html': import('@parcel/packager-html'),
+//   '@parcel/packager-js': import('@parcel/packager-js'),
+//   '@parcel/packager-raw': import('@parcel/packager-raw'),
+//   '@parcel/reporter-json': import('@parcel/reporter-json'),
+//   '@parcel/resolver-default': import('@parcel/resolver-default'),
+//   '@parcel/runtime-js': import('@parcel/runtime-js'),
+//   '@parcel/transformer-babel': import('@parcel/transformer-babel'),
+//   '@parcel/transformer-css': import('@parcel/transformer-css'),
+//   '@parcel/transformer-html': import('@parcel/transformer-html'),
+//   '@parcel/transformer-js': import('@parcel/transformer-js'),
+//   '@parcel/transformer-json': import('@parcel/transformer-json'),
+//   '@parcel/transformer-postcss': import('@parcel/transformer-postcss'),
+//   '@parcel/transformer-posthtml': import('@parcel/transformer-posthtml'),
+//   '@parcel/transformer-raw': import('@parcel/transformer-raw'),
+// };
 
 // This implements a package manager for Node by monkey patching the Node require
 // algorithm so that it uses the specified FileSystem instead of the native one.

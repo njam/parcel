@@ -5,12 +5,10 @@ import {memo} from 'preact/compat';
 import {ctrlKey} from '../utils.js';
 import renderGraph from '../graphs/index.js';
 
-const PATH_REGEX = /\/src\//g;
-
 export function ParcelError({error}) {
   return (
     <Box class="error" header={<span>A build error occured:</span>}>
-      {error.message.trim().replace(PATH_REGEX, '')}
+      {error.map(v => `${v.origin}: ${v.message}`).join('\n')}
     </Box>
   );
 }

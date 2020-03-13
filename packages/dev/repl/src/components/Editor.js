@@ -26,9 +26,15 @@ import {css} from '@codemirror/next/lang-css';
 
 //import { esLint } from "@codemirror/next/lang-javascript";
 //import Linter from "eslint4b-prebuilt";
-//import { linter, openLintPanel } from "@codemirror/next/lint";
+import {linting, openLintPanel} from '@codemirror/next/lint';
 
-const Editor = memo(function Editor({filename, editable, content, onChange}) {
+const Editor = memo(function Editor({
+  filename,
+  editable,
+  content,
+  onChange,
+  diagnostics,
+}) {
   const onTextChange =
     onChange &&
     useCallback(view => onChange(view.state.doc.toString()), [onChange]);
@@ -53,6 +59,7 @@ const Editor = memo(function Editor({filename, editable, content, onChange}) {
           ? css()
           : null,
         // linter(esLint(new Linter())),
+        linting(),
         search({keymap: defaultSearchKeymap}),
         defaultHighlighter,
         bracketMatching(),
@@ -65,7 +72,7 @@ const Editor = memo(function Editor({filename, editable, content, onChange}) {
           // "Mod-u": view => undoSelection(view) || true,
           // [ /Mac/.test(navigator.platform) ? "Mod-Shift-u" : "Alt-u"]: redoSelection,
           // "Ctrl-Space": startCompletion
-          // "Shift-Mod-m": openLintPanel
+          'Ctrl-Cmd-l': openLintPanel,
         }),
         keymap(baseKeymap),
       ].filter(Boolean),
@@ -78,6 +85,7 @@ const Editor = memo(function Editor({filename, editable, content, onChange}) {
       extensions={extensions}
       onTextChange={onTextChange}
       readOnly={!editable}
+      diagnostics={diagnostics}
     />
   );
 });

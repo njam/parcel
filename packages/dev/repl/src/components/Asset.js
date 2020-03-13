@@ -15,6 +15,7 @@ const Asset = memo(function Asset({
   onChangeEntry,
   onClickRemove,
   additionalHeader,
+  diagnostics,
 }) {
   const changeName = useCallback(e => onChangeName(name, e.target.value), [
     name,
@@ -65,6 +66,7 @@ const Asset = memo(function Asset({
           content={content}
           onChange={changeContent}
           editable
+          diagnostics={diagnostics}
         />
       </Box>
     );
@@ -82,7 +84,7 @@ const Asset = memo(function Asset({
           additionalHeader,
         ]}
       >
-        <Editor filename={name} content={content} />
+        <Editor filename={name} content={content} diagnostics={diagnostics} />
       </Box>
     );
   }

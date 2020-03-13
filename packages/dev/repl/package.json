@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@codemirror/next": "^0.4.0",
-    "@mischnic/codemirror-preact": "^0.0.3",
+    "@mischnic/codemirror-preact": "^0.0.5",
     "@mischnic/dot-svg": "^0.0.0",
     "@mischnic/pako": "^1.0.10",
     "@parcel/config-default": "^2.0.0-alpha.3",
