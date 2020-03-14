@@ -8,7 +8,9 @@ import renderGraph from '../graphs/index.js';
 export function ParcelError({error}) {
   return (
     <Box class="error" header={<span>A build error occured:</span>}>
-      {error.map(v => `${v.origin}: ${v.message}`).join('\n')}
+      {error.message}
+      {error.diagnostics &&
+        error.diagnostics.map(v => `${v.origin}: ${v.message}`).join('\n')}
     </Box>
   );
 }

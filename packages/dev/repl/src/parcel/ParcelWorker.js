@@ -14,6 +14,23 @@ expose({
   ready: new Promise(res => workerFarm.once('ready', () => res())),
 });
 
+const PathUtils = {
+  SRC_DIR: '/app/src',
+  SRC_REGEX: /^\/app\/src\//,
+  DIST_DIR: '/app/dist',
+  DIST_REGEX: /^\/app\/dist\//,
+  CACHE_DIR: '/.parcel-cache',
+  addSrc(v) {
+    return `${PathUtils.SRC_DIR}/${v}`;
+  },
+  removeSrc(v) {
+    return v.replace(PathUtils.SRC_REGEX, '');
+  },
+  removeDist(v) {
+    return v.replace(PathUtils.DIST_REGEX, '');
+  },
+};
+
 async function bundle(
   assets: Array<{|name: string, content: string, isEntry?: boolean|}>,
   options: {|
@@ -31,7 +48,7 @@ async function bundle(
   globalThis.PARCEL_DUMP_GRAPHVIZ =
     graphs && ((name, content) => graphs.push({name, content}));
 
-  const resultFromReporter = new Promise((res, rej) => {
+  const resultFromReporter = new Promise(res => {
     globalThis.PARCEL_JSON_LOGGER_STDOUT = d => {
       switch (d.type) {
         // case 'buildStart':
@@ -56,11 +73,11 @@ async function bundle(
           //   );
           // }
           // console.groupEnd();
-          res(d);
+          res({success: d});
           break;
         case 'buildFailure': {
           // console.log(`❗️`, d);
-          rej(d.message);
+          res({failure: d.message});
           break;
         }
       }
@@ -72,10 +89,13 @@ async function bundle(
   globalThis.fs = fs;
 
   // TODO only create new instance if options/entries changed
-  let entries = assets.filter(v => v.isEntry).map(v => `/${v.name}`);
+  let entries = assets
+    .filter(v => v.isEntry)
+    .map(v => PathUtils.addSrc(v.name));
   const b = new Parcel({
     entries,
     disableCache: true,
+    cacheDir: PathUtils.CACHE_DIR,
     mode: 'production',
     minify: options.minify,
     logLevel: 'verbose',
@@ -100,40 +120,57 @@ async function bundle(
     },
   });
 
+  await fs.mkdirp(PathUtils.SRC_DIR);
   let packageJson = {
     engines: {
       [options.targetType]:
         options.targetEnv || getDefaultTargetEnv(options.targetType),
     },
   };
-  await fs.writeFile('/package.json', JSON.stringify(packageJson));
+  await fs.writeFile(
+    PathUtils.addSrc('package.json'),
+    JSON.stringify(packageJson),
+  );
 
-  await fs.mkdirp('/');
   for (let {name, content} of assets) {
-    await fs.writeFile(`/${name}`, content);
+    await fs.writeFile(PathUtils.addSrc(name), content);
   }
-  await fs.rimraf(`/dist`);
+  await fs.rimraf(PathUtils.DIST_DIR);
 
   try {
     await b.run();
-  } catch (_) {
-    // we get the error from PARCEL_JSON_LOGGER_STDOUT
-  }
 
-  try {
-    let {buildTime, bundles} = await resultFromReporter;
-    let bundleContents = [];
-    for (let {filePath, size, time} of bundles) {
-      bundleContents.push({
-        name: filePath.replace(/^\/dist\//, ''),
-        content: await fs.readFile(filePath, 'utf8'),
-        size,
-        time,
-      });
+    let output = await resultFromReporter;
+    if (output.success) {
+      let bundleContents = [];
+      for (let {filePath, size, time} of output.success.bundles) {
+        bundleContents.push({
+          name: PathUtils.removeDist(filePath),
+          content: await fs.readFile(filePath, 'utf8'),
+          size,
+          time,
+        });
+      }
+
+      return {
+        type: 'success',
+        bundles: bundleContents,
+        buildTime: output.success.buildTime,
+        graphs,
+      };
+    } else {
+      for (let diagnostic of output.failure) {
+        diagnostic.filePath = PathUtils.removeSrc(diagnostic.filePath);
+      }
+      return {type: 'failure', diagnostics: output.failure};
     }
-
-    return {bundles: bundleContents, graphs, buildTime};
   } catch (error) {
-    return {error};
+    console.error(error);
+    console.error(error.diagnostics);
+    for (let diagnostic of error.diagnostics) {
+      if (diagnostic.filePath)
+        diagnostic.filePath = PathUtils.removeSrc(diagnostic.filePath);
+    }
+    return {type: 'failure', error: error, diagnostics: error.diagnostics};
   }
 }

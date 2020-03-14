@@ -197,9 +197,10 @@ function App() {
 
       setBundlingState(BUNDLING_FINISHED);
       setOutput(bundleOutput);
-      if (bundleOutput.error) {
+      console.log(bundleOutput);
+      if (bundleOutput.type === 'failure' && bundleOutput.diagnostics) {
         let diagnostics = new Map(); // asset -> Array<Diagnostic>
-        for (let diagnostic of bundleOutput.error) {
+        for (let diagnostic of bundleOutput.diagnostics) {
           if (diagnostic.codeFrame) {
             let list = diagnostics.get(diagnostic.filePath);
             if (!list) {
@@ -222,14 +223,13 @@ function App() {
               to,
               severity: 'error',
               source: diagnostic.origin,
-              message: diagnostic.message,
+              message:
+                diagnostic.codeFrame.codeHighlights[0] || diagnostic.message,
             });
           }
         }
         for (let [asset, assetDiagnostics] of diagnostics) {
-          setAssets(
-            assetsReducer.addDiagnostics(asset.slice(1), assetDiagnostics),
-          );
+          setAssets(assetsReducer.addDiagnostics(asset, assetDiagnostics));
         }
       }
     } catch (error) {
@@ -365,7 +365,7 @@ function App() {
         {(() => {
           if (bundlingState === BUNDLING_FINISHED) {
             if (output) {
-              if (output.bundles) {
+              if (output.type === 'success') {
                 return (
                   <Fragment>
                     {output.bundles.map(({name, content, size}) => (
