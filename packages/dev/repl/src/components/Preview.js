@@ -1,3 +1,5 @@
+// @flow
+// @jsx h
 // eslint-disable-next-line no-unused-vars
 import {h, Component, Fragment, createRef} from 'preact';
 // import path from 'path';
@@ -44,7 +46,7 @@ ${script}
 }
 
 export default class Preview extends Component {
-  constructor(props) {
+  constructor(props: any) {
     super(props);
     // this.iframe = createRef();
   }

@@ -1,3 +1,5 @@
+// @flow
+// @jsx h
 // eslint-disable-next-line no-unused-vars
 import {h} from 'preact';
 import {useCallback, useMemo} from 'preact/hooks';

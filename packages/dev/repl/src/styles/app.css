@@ -7,16 +7,16 @@
   height: 100%;
 }
 
-.row {
+.column {
   width: 50%;
 }
-.row:not(:first-child) {
+.column:not(:first-child) {
   padding-left: 0.4em;
 }
-.row:not(:last-child) {
+.column:not(:last-child) {
   padding-right: 0.4em;
 }
-.row > * {
+.column > * {
   margin: 0.5em 0;
   width: 100%;
 }
@@ -25,11 +25,11 @@
   #app {
     flex-direction: column;
   }
-  .row {
+  .column {
     width: 100%;
     padding: 0 !important;
   }
-  .row:first-child {
+  .column:first-child {
     border-bottom: 4px solid #ddd;
   }
   .notes {
@@ -53,18 +53,6 @@ button:enabled:active {
   background-color: #bbb;
 }
 
-.row > .presets {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-.row > .presets > span {
-  padding: 0.1em 0.2em;
-}
-.row > .presets > select {
-  font-size: inherit;
-  flex: 0.5;
-}
 .file {
   border: 0.15em solid #ddd;
 }
@@ -98,11 +86,31 @@ button:enabled:active {
 .file > .content .CodeMirror {
   height: auto;
 }
-.row > button {
+.column > button {
   width: 100%;
   font-size: 1em;
   padding: 0.4em;
 }
+
+/* LEFT COLUMN */
+
+.column > .presets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.column > .presets > span {
+  padding: 0.1em 0.2em;
+}
+.column > .presets > select {
+  font-size: inherit;
+  flex: 0.5;
+}
+
+.file.packageJson {
+  opacity: 0.6;
+}
+
 .start {
   filter: brightness(80%);
 }
@@ -136,24 +144,26 @@ select {
   padding-right: 0.2em;
 }
 
-.row > .gettingStarted {
+/* RIGHT COLUMN */
+
+.column > .gettingStarted {
   padding: 3em 0.3em;
   text-align: center;
 }
 
-.row > .loadState {
+.column > .loadState {
   padding: 0.4em;
   text-align: center;
   transition: background-color 0.3s;
 }
-.row > .loadState.loading {
+.column > .loadState.loading {
   background-color: orange;
 }
-.row > .loadState.ready {
+.column > .loadState.ready {
   background-color: #5cb35f;
 }
 
-.row > .output {
+.column > .output {
   width: 50%;
 }
 

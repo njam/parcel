@@ -1,3 +1,5 @@
+// @flow
+// @jsx h
 // eslint-disable-next-line no-unused-vars
 import {h} from 'preact';
 import {memo} from 'preact/compat';
@@ -16,6 +18,7 @@ const Asset = memo(function Asset({
   onClickRemove,
   additionalHeader,
   diagnostics,
+  ...props
 }) {
   const changeName = useCallback(e => onChangeName(name, e.target.value), [
     name,
@@ -60,6 +63,7 @@ const Asset = memo(function Asset({
             -
           </button>,
         ]}
+        {...props}
       >
         <Editor
           filename={name}
@@ -80,9 +84,11 @@ const Asset = memo(function Asset({
             class="filename"
             readonly
             value={name}
+            aria-label="Asset filename"
           />,
           additionalHeader,
         ]}
+        {...props}
       >
         <Editor filename={name} content={content} diagnostics={diagnostics} />
       </Box>

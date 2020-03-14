@@ -1,8 +1,39 @@
+// @flow
+// @jsx h
+/* eslint-disable react/jsx-no-bind */
 // eslint-disable-next-line no-unused-vars
 import {h} from 'preact';
 import {getDefaultTargetEnv} from '../utils';
 
-export default function Options({values, onChange, hasConfig}) {
+export type REPLOptions = {|
+  minify: boolean,
+  scopeHoist: boolean,
+  sourceMaps: boolean,
+  publicUrl: string,
+  targetType: 'node' | 'browsers',
+  targetEnv: null | string,
+  outputFormat: null | 'esmodule' | 'commonjs' | 'global',
+  showGraphs: boolean,
+|};
+
+export const DEFAULT_OPTIONS: REPLOptions = {
+  minify: false,
+  scopeHoist: true,
+  sourceMaps: false,
+  publicUrl: '',
+  targetType: 'browsers',
+  targetEnv: null,
+  outputFormat: null,
+  showGraphs: false,
+};
+
+export default function Options({
+  values,
+  onChange,
+}: {|
+  values: REPLOptions,
+  onChange: ($Keys<REPLOptions>, mixed) => void,
+|}) {
   return (
     <div class="options file">
       <label title="Sets `--no-minify`">
@@ -13,7 +44,7 @@ export default function Options({values, onChange, hasConfig}) {
           onChange={e => onChange('minify', e.target.checked)}
         />
       </label>
-      <label title="Corresponds `--no-scope-hoist`">
+      <label title="Corresponds to `--no-scope-hoist`">
         <span>Enable Scope Hoisting</span>
         <input
           type="checkbox"
@@ -37,6 +68,18 @@ export default function Options({values, onChange, hasConfig}) {
           placeholder="/"
           onInput={e => onChange('publicUrl', e.target.value)}
         />
+      </label>
+      <label>
+        <span>Output Format</span>
+        <select
+          onChange={e => onChange('outputFormat', e.target.value || null)}
+          value={values.outputFormat}
+        >
+          <option value=""></option>
+          <option value="esmodule">esmodule</option>
+          <option value="commonjs">commonjs</option>
+          <option value="global">global</option>
+        </select>
       </label>
       <label>
         <span>Target</span>

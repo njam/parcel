@@ -1,39 +1,44 @@
+// @flow
+// @jsx h
 /* eslint-disable import/first */
 if (process.env.NODE_ENV === 'development') {
   require('preact/debug');
 }
+import type {REPLOptions} from './components/Options';
 
 // eslint-disable-next-line no-unused-vars
 import {h, render, Fragment} from 'preact';
 import {useState, useEffect, useCallback, useReducer} from 'preact/hooks';
 import Asset from './components/Asset';
-import Options from './components/Options';
-// import Preview from './components/Preview';
+import Options, {DEFAULT_OPTIONS} from './components/Options';
 import {ParcelError, Notes, Graphs, useDebounce} from './components/helper';
+// import Preview from './components/Preview';
 
 import filesize from 'filesize';
 import {
-  PRESETS,
-  hasBrowserslist,
-  saveState,
+  generatePackageJson,
   loadState,
+  PRESETS,
+  saveState,
+  nthIndex,
   // downloadBuffer
 } from './utils';
 import {bundle, workerReady} from './parcel/';
 
-function nthIndex(str, pat, n) {
-  var L = str.length,
-    i = -1;
-  while (n-- && i++ < L) {
-    i = str.indexOf(pat, i);
-    if (i < 0) break;
-  }
-  return i;
-}
+export type CodeMirrorDiagnostic = {|
+  from: number,
+  to: number,
+  severity: 'info' | 'warning' | 'error',
+  source: string,
+  message: string,
+|};
 
-async function downloadZip() {
-  //   downloadBuffer('Parcel-REPL.zip', await getZip());
-}
+export type Assets = Array<{|
+  name: string,
+  content: string,
+  isEntry?: boolean,
+  diagnostics?: Array<CodeMirrorDiagnostic>,
+|}>;
 
 const BUNDLING_READY = Symbol('BUNDLING_READY');
 const BUNDLING_RUNNING = Symbol('BUNDLING_RUNNING');
@@ -44,7 +49,7 @@ const WORKER_STATE_SUCCESS = Symbol('WORKER_STATE_SUCCESS');
 
 const DEFAULT_PRESET = 'Javascript';
 
-function updateAssets(assets, name, prop, value) {
+function updateAssets(assets, name: string, prop: string, value: any) {
   return assets.map(a => (a.name === name ? {...a, [prop]: value} : a));
 }
 function assetsReducer(assets, action) {
@@ -124,21 +129,13 @@ optionsReducer.update = (name, value) => ({name, value});
 
 const initialHashState = loadState() || {};
 function App() {
-  const [assets, setAssets] = useReducer(
+  const [assets, setAssets]: [Assets, Function] = useReducer(
     assetsReducer,
     initialHashState.assets || PRESETS[DEFAULT_PRESET],
   );
-  const [options, setOptions] = useReducer(
+  const [options, setOptions]: [REPLOptions, Function] = useReducer(
     optionsReducer,
-    initialHashState.options || {
-      minify: false,
-      scopeHoist: true,
-      sourceMaps: false,
-      publicUrl: '',
-      targetType: 'browsers',
-      targetEnv: null,
-      showGraphs: false,
-    },
+    initialHashState.options || DEFAULT_OPTIONS,
   );
 
   const [currentPreset, setCurrentPreset] = useState(
@@ -180,26 +177,25 @@ function App() {
     try {
       const bundleOutput = await bundle(assets, options);
 
-      // // await new Promise(async res => {
-      // //   window.addEventListener(
-      // //     'message',
-      // //     e => {
-      // //       console.log(e);
-      // //       res();
-      // //     },
-      // //     {once: true}
-      // //   );
-      // // const sw = await navigator.serviceWorker.ready;
-      // // if (sw.active) {
-      // //   sw.active.postMessage(await getFS());
-      // // }
-      // // });
+      // await new Promise(async res => {
+      //   window.addEventListener(
+      //     'message',
+      //     e => {
+      //       console.log(e);
+      //       res();
+      //     },
+      //     {once: true}
+      //   );
+      // const sw = await navigator.serviceWorker.ready;
+      // if (sw.active) {
+      //   sw.active.postMessage(await getFS());
+      // }
+      // });
 
       setBundlingState(BUNDLING_FINISHED);
       setOutput(bundleOutput);
-      console.log(bundleOutput);
       if (bundleOutput.type === 'failure' && bundleOutput.diagnostics) {
-        let diagnostics = new Map(); // asset -> Array<Diagnostic>
+        let diagnostics = new Map<string, Array<CodeMirrorDiagnostic>>(); // asset -> Array<Diagnostic>
         for (let diagnostic of bundleOutput.diagnostics) {
           if (diagnostic.codeFrame) {
             let list = diagnostics.get(diagnostic.filePath);
@@ -224,7 +220,8 @@ function App() {
               severity: 'error',
               source: diagnostic.origin,
               message:
-                diagnostic.codeFrame.codeHighlights[0] || diagnostic.message,
+                diagnostic.codeFrame.codeHighlights[0].message ||
+                diagnostic.message,
             });
           }
         }
@@ -308,7 +305,7 @@ function App() {
 
   return (
     <div id="app">
-      <div class="row">
+      <div class="column">
         <label class="presets">
           <span>Preset:</span>
           <select onChange={changePresetCb} value={currentPreset}>
@@ -333,6 +330,12 @@ function App() {
             diagnostics={diagnostics}
           />
         ))}
+        <Asset
+          name="package.json"
+          content={generatePackageJson(options)}
+          // diagnostics={diagnostics}
+          class="packageJson"
+        />
         <button class="addAsset" onClick={addAssetCb}>
           Add asset
         </button>
@@ -343,14 +346,10 @@ function App() {
         >
           Bundle!
         </button>
-        <Options
-          values={options}
-          onChange={changeOptionsCb}
-          enableBrowserslist={!hasBrowserslist(assets)}
-        />
+        <Options values={options} onChange={changeOptionsCb} />
         <Notes />
       </div>
-      <div class="row">
+      <div class="column">
         {bundlingState === BUNDLING_READY ? (
           workerState === WORKER_STATE_SUCCESS ? (
             <div class="loadState ready">Parcel is ready</div>
@@ -380,9 +379,9 @@ function App() {
                     ))}
                     {output.graphs && <Graphs graphs={output.graphs} />}
                     {/* <Preview output={output.assets} options={options} /> */}
-                    <button disabled onClick={downloadZip}>
+                    {/* <button disabled onClick={downloadZip}>
                       Download ZIP
-                    </button>
+                    </button> */}
                   </Fragment>
                 );
               } else {

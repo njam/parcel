@@ -15,11 +15,11 @@ export function ParcelError({error}) {
   );
 }
 
-export function Box(props) {
+export function Box({class: clas, header, children, ...props}) {
   return (
-    <div class={`file ${props.class || ''}`}>
-      {props.header && <div class="header">{props.header}</div>}
-      <div class="content">{props.children}</div>
+    <div class={`file ${clas || ''}`} {...props}>
+      {header && <div class="header">{header}</div>}
+      <div class="content">{children}</div>
     </div>
   );
 }
@@ -60,9 +60,9 @@ export function Notes() {
   );
 }
 
-function toDataURI(mime, data) {
-  return `data:${mime};charset=utf-8;base64,${btoa(data)}`;
-}
+// function toDataURI(mime, data) {
+//   return `data:${mime};charset=utf-8;base64,${btoa(data)}`;
+// }
 
 const Graphs = memo(function Graphs({graphs}) {
   let [rendered, setRendered] = useState();

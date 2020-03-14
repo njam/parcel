@@ -1,4 +1,6 @@
 // @flow
+import type {REPLOptions} from '../components/Options.js';
+
 import {expose} from 'comlink';
 import Parcel from '@parcel/core';
 // import SimplePackageInstaller from './SimplePackageInstaller';
@@ -6,7 +8,7 @@ import Parcel from '@parcel/core';
 // import {prettifyTime} from '@parcel/utils';
 import fs from '../../fs.js';
 import workerFarm from '../../workerFarm.js';
-import {getDefaultTargetEnv} from '../utils.js';
+import {generatePackageJson} from '../utils.js';
 import defaultConfig from '@parcel/config-repl';
 
 expose({
@@ -15,33 +17,21 @@ expose({
 });
 
 const PathUtils = {
-  SRC_DIR: '/app/src',
-  SRC_REGEX: /^\/app\/src\//,
+  APP_DIR: '/app',
   DIST_DIR: '/app/dist',
-  DIST_REGEX: /^\/app\/dist\//,
-  CACHE_DIR: '/.parcel-cache',
-  addSrc(v) {
-    return `${PathUtils.SRC_DIR}/${v}`;
+  CACHE_DIR: '/.parcel-cache/',
+  APP_REGEX: /^\/app\//,
+  addAppDir(v) {
+    return `${PathUtils.APP_DIR}/${v}`;
   },
-  removeSrc(v) {
-    return v.replace(PathUtils.SRC_REGEX, '');
-  },
-  removeDist(v) {
-    return v.replace(PathUtils.DIST_REGEX, '');
+  removeAppDir(v) {
+    return v.replace(PathUtils.APP_REGEX, '');
   },
 };
 
 async function bundle(
   assets: Array<{|name: string, content: string, isEntry?: boolean|}>,
-  options: {|
-    minify: boolean,
-    scopeHoist: boolean,
-    sourceMaps: boolean,
-    publicUrl: string,
-    targetType: string,
-    targetEnv: ?string,
-    showGraphs: boolean,
-  |},
+  options: REPLOptions,
 ) {
   let graphs = options.showGraphs && [];
   // $FlowFixMe
@@ -91,51 +81,44 @@ async function bundle(
   // TODO only create new instance if options/entries changed
   let entries = assets
     .filter(v => v.isEntry)
-    .map(v => PathUtils.addSrc(v.name));
+    .map(v => PathUtils.addAppDir(v.name));
   const b = new Parcel({
     entries,
     disableCache: true,
     cacheDir: PathUtils.CACHE_DIR,
+    distDir: PathUtils.DIST_DIR,
     mode: 'production',
-    minify: options.minify,
+    hot: false,
     logLevel: 'verbose',
+    patchConsole: false,
+    workerFarm,
     defaultConfig: {
       ...defaultConfig,
       filePath: '<noop>',
     },
-    hot: false,
     inputFS: fs,
     outputFS: fs,
-    patchConsole: false,
+    minify: options.minify,
     publicUrl: options.publicUrl || undefined,
     scopeHoist: options.scopeHoist,
-    workerFarm,
     // packageManager: new NodePackageManager(
     //   memFS,
     //   new SimplePackageInstaller(memFS),
     // ),
-    defaultEngines: {
-      browsers: ['>= 0.25%'],
-      node: '8',
-    },
   });
 
-  await fs.mkdirp(PathUtils.SRC_DIR);
-  let packageJson = {
-    engines: {
-      [options.targetType]:
-        options.targetEnv || getDefaultTargetEnv(options.targetType),
-    },
-  };
+  await fs.rimraf(PathUtils.APP_DIR);
+  await fs.mkdirp(PathUtils.APP_DIR);
   await fs.writeFile(
-    PathUtils.addSrc('package.json'),
-    JSON.stringify(packageJson),
+    PathUtils.addAppDir('package.json'),
+    generatePackageJson(options),
   );
+  await fs.writeFile(PathUtils.addAppDir('yarn.lock'), '');
 
+  await fs.mkdirp(PathUtils.addAppDir('src'));
   for (let {name, content} of assets) {
-    await fs.writeFile(PathUtils.addSrc(name), content);
+    await fs.writeFile(PathUtils.addAppDir(name), content);
   }
-  await fs.rimraf(PathUtils.DIST_DIR);
 
   try {
     await b.run();
@@ -145,7 +128,7 @@ async function bundle(
       let bundleContents = [];
       for (let {filePath, size, time} of output.success.bundles) {
         bundleContents.push({
-          name: PathUtils.removeDist(filePath),
+          name: PathUtils.removeAppDir(filePath),
           content: await fs.readFile(filePath, 'utf8'),
           size,
           time,
@@ -160,16 +143,14 @@ async function bundle(
       };
     } else {
       for (let diagnostic of output.failure) {
-        diagnostic.filePath = PathUtils.removeSrc(diagnostic.filePath);
+        diagnostic.filePath = PathUtils.removeAppDir(diagnostic.filePath);
       }
       return {type: 'failure', diagnostics: output.failure};
     }
   } catch (error) {
-    console.error(error);
-    console.error(error.diagnostics);
     for (let diagnostic of error.diagnostics) {
       if (diagnostic.filePath)
-        diagnostic.filePath = PathUtils.removeSrc(diagnostic.filePath);
+        diagnostic.filePath = PathUtils.removeAppDir(diagnostic.filePath);
     }
     return {type: 'failure', error: error, diagnostics: error.diagnostics};
   }
