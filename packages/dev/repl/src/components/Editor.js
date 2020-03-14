@@ -32,7 +32,7 @@ import {linting, openLintPanel} from '@codemirror/next/lint';
 
 const Editor = memo(function Editor({
   filename,
-  editable,
+  readOnly,
   content,
   onChange,
   diagnostics,
@@ -86,7 +86,7 @@ const Editor = memo(function Editor({
       value={content}
       extensions={extensions}
       onTextChange={onTextChange}
-      readOnly={!editable}
+      readOnly={readOnly}
       diagnostics={diagnostics}
     />
   );

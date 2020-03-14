@@ -2,7 +2,7 @@
 import {h} from 'preact';
 import {useState, useEffect} from 'preact/hooks';
 import {memo} from 'preact/compat';
-import {ctrlKey} from '../utils.js';
+import {ctrlKey} from '../utils';
 import renderGraph from '../graphs/index.js';
 
 export function ParcelError({error}) {

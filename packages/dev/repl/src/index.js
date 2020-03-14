@@ -4,7 +4,7 @@
 if (process.env.NODE_ENV === 'development') {
   require('preact/debug');
 }
-import type {REPLOptions} from './components/Options';
+import type {Assets, REPLOptions} from './utils';
 
 // eslint-disable-next-line no-unused-vars
 import {h, render, Fragment} from 'preact';
@@ -16,29 +16,14 @@ import {ParcelError, Notes, Graphs, useDebounce} from './components/helper';
 
 import filesize from 'filesize';
 import {
+  assetsReducer,
+  ASSET_PRESETS,
   generatePackageJson,
   loadState,
-  PRESETS,
   saveState,
-  nthIndex,
   // downloadBuffer
 } from './utils';
 import {bundle, workerReady} from './parcel/';
-
-export type CodeMirrorDiagnostic = {|
-  from: number,
-  to: number,
-  severity: 'info' | 'warning' | 'error',
-  source: string,
-  message: string,
-|};
-
-export type Assets = Array<{|
-  name: string,
-  content: string,
-  isEntry?: boolean,
-  diagnostics?: Array<CodeMirrorDiagnostic>,
-|}>;
 
 const BUNDLING_READY = Symbol('BUNDLING_READY');
 const BUNDLING_RUNNING = Symbol('BUNDLING_RUNNING');
@@ -48,76 +33,6 @@ const WORKER_STATE_LOADING = Symbol('WORKER_STATE_LOADING');
 const WORKER_STATE_SUCCESS = Symbol('WORKER_STATE_SUCCESS');
 
 const DEFAULT_PRESET = 'Javascript';
-
-function updateAssets(assets, name: string, prop: string, value: any) {
-  return assets.map(a => (a.name === name ? {...a, [prop]: value} : a));
-}
-function assetsReducer(assets, action) {
-  if (action.type === 'changePreset') {
-    return action.assets;
-  } else if (action.type === 'updateAsset') {
-    const {name, prop, value} = action;
-    if (prop === 'name' && assets.find(a => a.name === value)) {
-      return [...assets];
-    } else {
-      if (prop === 'content') {
-        assets = updateAssets(assets, name, 'time', Date.now());
-        assets = updateAssets(assets, name, 'diagnostics', null);
-      }
-      return updateAssets(assets, name, prop, value);
-    }
-  } else if (action.type === 'removeAsset') {
-    const {name} = action;
-    return assets.filter(a => a.name !== name);
-  } else if (action.type === 'addAsset') {
-    let nameIndex = 0;
-    while (
-      assets.find(
-        v => v.name == 'new' + (nameIndex ? `-${nameIndex}` : '') + '.js',
-      )
-    ) {
-      nameIndex++;
-    }
-
-    return [
-      ...assets,
-      {
-        name: 'new' + (nameIndex ? `-${nameIndex}` : '') + '.js',
-        content: '',
-        isEntry: false,
-      },
-    ];
-  }
-
-  throw new Error('Unknown action');
-}
-assetsReducer.changePreset = assets => ({type: 'changePreset', assets});
-assetsReducer.changeName = (name, newName) => ({
-  type: 'updateAsset',
-  name,
-  prop: 'name',
-  value: newName,
-});
-assetsReducer.changeContent = (name, content) => ({
-  type: 'updateAsset',
-  name,
-  prop: 'content',
-  value: content,
-});
-assetsReducer.changeEntry = (name, isEntry) => ({
-  type: 'updateAsset',
-  name,
-  prop: 'isEntry',
-  value: isEntry,
-});
-assetsReducer.addDiagnostics = (name, diagnostics) => ({
-  type: 'updateAsset',
-  name,
-  prop: 'diagnostics',
-  value: diagnostics,
-});
-assetsReducer.remove = name => ({type: 'removeAsset', name});
-assetsReducer.add = () => ({type: 'addAsset'});
 
 function optionsReducer(options, {name, value}) {
   return {
@@ -131,7 +46,7 @@ const initialHashState = loadState() || {};
 function App() {
   const [assets, setAssets]: [Assets, Function] = useReducer(
     assetsReducer,
-    initialHashState.assets || PRESETS[DEFAULT_PRESET],
+    initialHashState.assets || ASSET_PRESETS[DEFAULT_PRESET],
   );
   const [options, setOptions]: [REPLOptions, Function] = useReducer(
     optionsReducer,
@@ -194,38 +109,9 @@ function App() {
 
       setBundlingState(BUNDLING_FINISHED);
       setOutput(bundleOutput);
+      console.log(bundleOutput);
       if (bundleOutput.type === 'failure' && bundleOutput.diagnostics) {
-        let diagnostics = new Map<string, Array<CodeMirrorDiagnostic>>(); // asset -> Array<Diagnostic>
-        for (let diagnostic of bundleOutput.diagnostics) {
-          if (diagnostic.codeFrame) {
-            let list = diagnostics.get(diagnostic.filePath);
-            if (!list) {
-              list = [];
-              diagnostics.set(diagnostic.filePath, list);
-            }
-
-            let {start, end} = diagnostic.codeFrame.codeHighlights[0];
-            start.line--;
-            end.line--;
-
-            let from =
-              nthIndex(diagnostic.codeFrame.code, '\n', start.line) +
-              start.column;
-            let to =
-              nthIndex(diagnostic.codeFrame.code, '\n', end.line) + end.column;
-
-            list.push({
-              from,
-              to,
-              severity: 'error',
-              source: diagnostic.origin,
-              message:
-                diagnostic.codeFrame.codeHighlights[0].message ||
-                diagnostic.message,
-            });
-          }
-        }
-        for (let [asset, assetDiagnostics] of diagnostics) {
+        for (let [asset, assetDiagnostics] of bundleOutput.diagnostics) {
           setAssets(assetsReducer.addDiagnostics(asset, assetDiagnostics));
         }
       }
@@ -266,7 +152,7 @@ function App() {
   const changePresetCb = useCallback(e => {
     setOutput(null);
     setCurrentPreset(e.target.value);
-    setAssets(assetsReducer.changePreset(PRESETS[e.target.value]));
+    setAssets(assetsReducer.setAssets(ASSET_PRESETS[e.target.value]));
     setBundlingState(null);
   }, []);
 
@@ -309,7 +195,7 @@ function App() {
         <label class="presets">
           <span>Preset:</span>
           <select onChange={changePresetCb} value={currentPreset}>
-            {Object.keys(PRESETS).map(v => (
+            {Object.keys(ASSET_PRESETS).map(v => (
               <option key={v} value={v}>
                 {v}
               </option>
@@ -323,7 +209,6 @@ function App() {
             onChangeName={changeAssetNameCb}
             content={content}
             onChangeContent={changeAssetContentCb}
-            editable
             isEntry={isEntry}
             onChangeEntry={changeAssetEntryCb}
             onClickRemove={removeAssetCb}
@@ -333,6 +218,7 @@ function App() {
         <Asset
           name="package.json"
           content={generatePackageJson(options)}
+          readOnly
           // diagnostics={diagnostics}
           class="packageJson"
         />
@@ -375,6 +261,7 @@ function App() {
                         additionalHeader={
                           <div class="outputSize">{filesize(size)}</div>
                         }
+                        readOnly
                       />
                     ))}
                     {output.graphs && <Graphs graphs={output.graphs} />}

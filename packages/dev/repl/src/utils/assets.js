@@ -1,118 +1,130 @@
 // @flow
-import type {PackageJSON} from '@parcel/types';
-import type {REPLOptions} from './components/Options.js';
-import type {Assets} from './';
+type Asset = {|
+  name: string,
+  content: string,
+  isEntry?: boolean,
+  diagnostics?: Array<CodeMirrorDiagnostic>,
+|};
+export type Assets = Array<Asset>;
 
-export function getDefaultTargetEnv(
-  type: $ElementType<REPLOptions, 'targetType'>,
-) {
-  switch (type) {
-    case 'node':
-      return '10';
-    case 'browsers':
-      return 'since 2017';
-    default:
-      throw new Error(`Missing default target env for ${type}`);
-  }
-}
+export type CodeMirrorDiagnostic = {|
+  from: number,
+  to: number,
+  severity: 'info' | 'warning' | 'error',
+  source: string,
+  message: string,
+|};
 
-export function generatePackageJson(options: REPLOptions) {
-  let app = {};
-  if (options.outputFormat) {
-    app.outputFormat = options.outputFormat;
-  }
+export type AssetAction =
+  | {|
+      type: 'updateAsset',
+      name: string,
+      prop: 'isEntry',
+      value: $PropertyType<Asset, 'isEntry'>,
+    |}
+  | {|
+      type: 'updateAsset',
+      name: string,
+      prop: 'diagnostics',
+      value: $PropertyType<Asset, 'diagnostics'>,
+    |}
+  | {|
+      type: 'updateAsset',
+      name: string,
+      prop: string,
+      value: string,
+    |}
+  | {|
+      type: 'removeAsset',
+      name: string,
+    |}
+  | {|
+      type: 'setAssets',
+      assets: Assets,
+    |}
+  | {|
+      type: 'addAsset',
+    |};
 
-  let pkg: PackageJSON = {
-    name: 'repl',
-    version: '0.0.0',
-    engines: {
-      [(options.targetType: string)]:
-        options.targetEnv || getDefaultTargetEnv(options.targetType),
-    },
-    targets: {
-      app,
-    },
-  };
-
-  return JSON.stringify(pkg, null, 2);
-}
-
-export function nthIndex(str: string, pat: string, n: number) {
-  var length = str.length,
-    i = -1;
-  while (n-- && i++ < length) {
-    i = str.indexOf(pat, i);
-    if (i < 0) break;
-  }
-  return i;
-}
-
-// export function hasBrowserslist(assets) {
-//   const configExists = assets.some(
-//     v => v.name === 'browserslist' || v.name === '.browserslistrc',
-//   );
-//   if (configExists) return true;
-
-//   const pkg = assets.find(v => v.name.endsWith('package.json'));
-//   try {
-//     const configInPackage =
-//       pkg && Boolean(JSON.parse(pkg.content).browserslist);
-//     return configInPackage;
-//   } catch (e) {
-//     return false;
-//   }
-// }
-
-// export function downloadBuffer(name, buf, mime = 'application/zip') {
-//   const blob = new Blob([buf], {type: mime});
-//   const el = document.createElement('a');
-//   el.href = URL.createObjectURL(blob);
-//   el.download = name;
-//   el.click();
-//   setTimeout(() => URL.revokeObjectURL(el.href), 1000);
-// }
-
-export const ctrlKey = navigator.platform.includes('Mac') ? '⌘' : 'Ctrl';
-
-export function saveState(
-  curPreset: string,
-  options: REPLOptions,
+export function updateAssets(
   assets: Assets,
-) {
-  let data = {
-    currentPreset: curPreset,
-    options,
-    assets: assets.map(({name, content, isEntry = false}) =>
-      isEntry ? [name, content, 1] : [name, content],
-    ),
-  };
-
-  window.location.hash = btoa(encodeURIComponent(JSON.stringify(data)));
+  name: string,
+  prop: string,
+  value: mixed,
+): Assets {
+  return assets.map(a => (a.name === name ? {...a, [prop]: value} : a));
 }
+export function assetsReducer(assets: Assets, action: AssetAction): Assets {
+  if (action.type === 'setAssets') {
+    return action.assets;
+  } else if (action.type === 'updateAsset') {
+    const {name, prop, value} = action;
+    if (prop === 'name' && assets.find(a => a.name === value)) {
+      return [...assets];
+    } else {
+      if (prop === 'content') {
+        assets = updateAssets(assets, name, 'time', Date.now());
+        assets = updateAssets(assets, name, 'diagnostics', null);
+      }
+      return updateAssets(assets, name, prop, value);
+    }
+  } else if (action.type === 'removeAsset') {
+    const {name} = action;
+    return assets.filter(a => a.name !== name);
+  } else if (action.type === 'addAsset') {
+    let nameIndex = 0;
+    while (
+      assets.find(
+        v => v.name == 'new' + (nameIndex ? `-${nameIndex}` : '') + '.js',
+      )
+    ) {
+      nameIndex++;
+    }
 
-export function loadState(): ?{|
-  assets: Assets,
-  options: REPLOptions,
-  currentPreset: ?string,
-|} {
-  const hash = window.location.hash.replace(/^#/, '');
-
-  try {
-    const data = JSON.parse(decodeURIComponent(atob(hash)));
-    data.assets = data.assets.map(([name, content, isEntry = false]) => ({
-      name,
-      content,
-      isEntry: Boolean(isEntry),
-    }));
-    return data;
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    window.location.hash = '';
-    return null;
+    return [
+      ...assets,
+      {
+        name: 'new' + (nameIndex ? `-${nameIndex}` : '') + '.js',
+        content: '',
+        isEntry: false,
+      },
+    ];
   }
-}
 
-export const PRESETS = {
+  throw new Error('Unknown action');
+}
+assetsReducer.setAssets = (assets: Assets) => ({type: 'setAssets', assets});
+assetsReducer.changeName = (name: string, newName: string) => ({
+  type: 'updateAsset',
+  name,
+  prop: 'name',
+  value: newName,
+});
+assetsReducer.changeContent = (name: string, content: string) => ({
+  type: 'updateAsset',
+  name,
+  prop: 'content',
+  value: content,
+});
+assetsReducer.changeEntry = (name: string, isEntry: boolean) => ({
+  type: 'updateAsset',
+  name,
+  prop: 'isEntry',
+  value: isEntry,
+});
+assetsReducer.addDiagnostics = (
+  name: string,
+  diagnostics: Array<CodeMirrorDiagnostic>,
+) => ({
+  type: 'updateAsset',
+  name,
+  prop: 'diagnostics',
+  value: diagnostics,
+});
+assetsReducer.remove = (name: string) => ({type: 'removeAsset', name});
+assetsReducer.add = () => ({type: 'addAsset'});
+
+export const ASSET_PRESETS = {
   Javascript: [
     {
       name: 'src/index.js',

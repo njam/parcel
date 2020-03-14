@@ -1,20 +1,11 @@
 // @flow
 // @jsx h
 /* eslint-disable react/jsx-no-bind */
+import type {REPLOptions} from '../utils';
+
 // eslint-disable-next-line no-unused-vars
 import {h} from 'preact';
 import {getDefaultTargetEnv} from '../utils';
-
-export type REPLOptions = {|
-  minify: boolean,
-  scopeHoist: boolean,
-  sourceMaps: boolean,
-  publicUrl: string,
-  targetType: 'node' | 'browsers',
-  targetEnv: null | string,
-  outputFormat: null | 'esmodule' | 'commonjs' | 'global',
-  showGraphs: boolean,
-|};
 
 export const DEFAULT_OPTIONS: REPLOptions = {
   minify: false,

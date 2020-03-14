@@ -11,7 +11,7 @@ const Asset = memo(function Asset({
   name,
   content,
   isEntry,
-  editable,
+  readOnly,
   onChangeName,
   onChangeContent,
   onChangeEntry,
@@ -37,7 +37,31 @@ const Asset = memo(function Asset({
     onClickRemove,
   ]);
 
-  if (editable) {
+  if (readOnly) {
+    return (
+      <Box
+        header={[
+          <input
+            key="filename"
+            type="text"
+            class="filename"
+            readonly
+            value={name}
+            aria-label="Asset filename"
+          />,
+          additionalHeader,
+        ]}
+        {...props}
+      >
+        <Editor
+          filename={name}
+          content={content}
+          diagnostics={diagnostics}
+          readOnly
+        />
+      </Box>
+    );
+  } else {
     return (
       <Box
         header={[
@@ -69,28 +93,8 @@ const Asset = memo(function Asset({
           filename={name}
           content={content}
           onChange={changeContent}
-          editable
           diagnostics={diagnostics}
         />
-      </Box>
-    );
-  } else {
-    return (
-      <Box
-        header={[
-          <input
-            key="filename"
-            type="text"
-            class="filename"
-            readonly
-            value={name}
-            aria-label="Asset filename"
-          />,
-          additionalHeader,
-        ]}
-        {...props}
-      >
-        <Editor filename={name} content={content} diagnostics={diagnostics} />
       </Box>
     );
   }

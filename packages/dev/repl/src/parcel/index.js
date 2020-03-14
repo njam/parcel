@@ -1,3 +1,7 @@
+// @flow
+import type {Assets, REPLOptions} from '../utils';
+import type {BundleOutput} from './ParcelWorker';
+
 import {wrap} from 'comlink';
 
 const worker = wrap(
@@ -22,8 +26,11 @@ const worker = wrap(
 //   },
 // };
 
-export const workerReady = worker.ready;
+export const workerReady: Promise<void> = worker.ready;
 
-export function bundle(assets, options) {
+export function bundle(
+  assets: Assets,
+  options: REPLOptions,
+): Promise<BundleOutput> {
   return worker.bundle(assets, options);
 }

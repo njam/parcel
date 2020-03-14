@@ -1,5 +1,6 @@
 // @flow
-import type {REPLOptions} from '../components/Options.js';
+import type {Diagnostic} from '@parcel/diagnostic';
+import type {Assets, CodeMirrorDiagnostic, REPLOptions} from '../utils';
 
 import {expose} from 'comlink';
 import Parcel from '@parcel/core';
@@ -8,8 +9,26 @@ import Parcel from '@parcel/core';
 // import {prettifyTime} from '@parcel/utils';
 import fs from '../../fs.js';
 import workerFarm from '../../workerFarm.js';
-import {generatePackageJson} from '../utils.js';
+import {generatePackageJson, nthIndex} from '../utils/';
 import defaultConfig from '@parcel/config-repl';
+
+export type BundleOutput =
+  | {|
+      type: 'success',
+      bundles: Array<{|
+        name: string,
+        content: string,
+        size: number,
+        time: number,
+      |}>,
+      buildTime: number,
+      graphs: ?Array<{|name: string, content: string|}>,
+    |}
+  | {|
+      type: 'failure',
+      error?: Error,
+      diagnostics: Map<string, Array<CodeMirrorDiagnostic>>,
+    |};
 
 expose({
   bundle,
@@ -29,11 +48,42 @@ const PathUtils = {
   },
 };
 
+function convertDiagnostics(diagnostics: Array<Diagnostic>) {
+  let parsedDiagnostics = new Map<string, Array<CodeMirrorDiagnostic>>();
+  for (let diagnostic of diagnostics) {
+    if (diagnostic.filePath)
+      diagnostic.filePath = PathUtils.removeAppDir(diagnostic.filePath);
+
+    let {filePath, codeFrame, origin} = diagnostic;
+    if (filePath && codeFrame) {
+      let list = parsedDiagnostics.get(filePath);
+      if (!list) {
+        list = [];
+        parsedDiagnostics.set(filePath, list);
+      }
+
+      let {start, end} = codeFrame.codeHighlights[0];
+
+      let from = nthIndex(codeFrame.code, '\n', start.line - 1) + start.column;
+      let to = nthIndex(codeFrame.code, '\n', end.line - 1) + end.column;
+
+      list.push({
+        from,
+        to,
+        severity: 'error',
+        source: origin || 'info',
+        message: codeFrame.codeHighlights[0].message || diagnostic.message,
+      });
+    }
+  }
+  return parsedDiagnostics;
+}
+
 async function bundle(
-  assets: Array<{|name: string, content: string, isEntry?: boolean|}>,
+  assets: Assets,
   options: REPLOptions,
-) {
-  let graphs = options.showGraphs && [];
+): Promise<BundleOutput> {
+  let graphs = options.showGraphs ? [] : null;
   // $FlowFixMe
   globalThis.PARCEL_DUMP_GRAPHVIZ =
     graphs && ((name, content) => graphs.push({name, content}));
@@ -142,16 +192,13 @@ async function bundle(
         graphs,
       };
     } else {
-      for (let diagnostic of output.failure) {
-        diagnostic.filePath = PathUtils.removeAppDir(diagnostic.filePath);
-      }
-      return {type: 'failure', diagnostics: output.failure};
+      return {type: 'failure', diagnostics: convertDiagnostics(output.failure)};
     }
   } catch (error) {
-    for (let diagnostic of error.diagnostics) {
-      if (diagnostic.filePath)
-        diagnostic.filePath = PathUtils.removeAppDir(diagnostic.filePath);
-    }
-    return {type: 'failure', error: error, diagnostics: error.diagnostics};
+    return {
+      type: 'failure',
+      error: error,
+      diagnostics: convertDiagnostics(error.diagnostics),
+    };
   }
 }
