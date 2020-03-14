@@ -1,56 +1,31 @@
 // @flow
-import type {MemoryFS} from '@parcel/fs';
-
 import {expose} from 'comlink';
 import Parcel from '@parcel/core';
 // import SimplePackageInstaller from './SimplePackageInstaller';
 // import {NodePackageManager} from '@parcel/package-manager';
 // import {prettifyTime} from '@parcel/utils';
-import memFS from 'fs';
+import fs from '../../fs.js';
 import workerFarm from '../../workerFarm.js';
 import {getDefaultTargetEnv} from '../utils.js';
-
-const defaultConfig = {
-  bundler: '@parcel/bundler-default',
-  transformers: {
-    '*.{js,mjs,jsm,jsx,es6,ts,tsx}': [
-      '@parcel/transformer-babel',
-      '@parcel/transformer-js',
-    ],
-    '*.{json,json5}': ['@parcel/transformer-json'],
-    '*.{htm,html}': [
-      '@parcel/transformer-posthtml',
-      '@parcel/transformer-html',
-    ],
-    '*.css': ['@parcel/transformer-postcss', '@parcel/transformer-css'],
-    'url:*': ['@parcel/transformer-raw'],
-  },
-  namers: ['@parcel/namer-default'],
-  runtimes: {
-    browser: ['@parcel/runtime-js'],
-    'service-worker': ['@parcel/runtime-js'],
-    'web-worker': ['@parcel/runtime-js'],
-    node: ['@parcel/runtime-js'],
-  },
-  optimizers: {
-    '*.js': ['@parcel/optimizer-terser'],
-  },
-  packagers: {
-    '*.html': '@parcel/packager-html',
-    '*.css': '@parcel/packager-css',
-    '*.js': '@parcel/packager-js',
-    '*': '@parcel/packager-raw',
-  },
-  resolvers: ['@parcel/resolver-default'],
-  reporters: ['@parcel/reporter-json'],
-};
+import defaultConfig from '@parcel/config-repl';
 
 expose({
   bundle,
-  ready: true,
+  ready: new Promise(res => workerFarm.once('ready', () => res())),
 });
 
-async function bundle(assets, options) {
+async function bundle(
+  assets: Array<{|name: string, content: string, isEntry?: boolean|}>,
+  options: {|
+    minify: boolean,
+    scopeHoist: boolean,
+    sourceMaps: boolean,
+    publicUrl: string,
+    targetType: string,
+    targetEnv: ?string,
+    showGraphs: boolean,
+  |},
+) {
   let graphs = options.showGraphs && [];
   // $FlowFixMe
   globalThis.PARCEL_DUMP_GRAPHVIZ =
@@ -94,9 +69,7 @@ async function bundle(assets, options) {
   });
 
   // $FlowFixMe
-  globalThis.memFS = memFS;
-  // $FlowFixMe
-  let fs: MemoryFS = memFS;
+  globalThis.fs = fs;
 
   // TODO only create new instance if options/entries changed
   let entries = assets.filter(v => v.isEntry).map(v => `/${v.name}`);
@@ -108,13 +81,13 @@ async function bundle(assets, options) {
     logLevel: 'verbose',
     defaultConfig: {
       ...defaultConfig,
-      filePath: '/',
+      filePath: '<noop>',
     },
     hot: false,
     inputFS: fs,
     outputFS: fs,
     patchConsole: false,
-    publicUrl: options.publicUrl || null,
+    publicUrl: options.publicUrl || undefined,
     scopeHoist: options.scopeHoist,
     workerFarm,
     // packageManager: new NodePackageManager(

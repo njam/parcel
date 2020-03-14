@@ -24,10 +24,11 @@ if (typeof SharedArrayBuffer !== 'undefined') {
     // Firefox might throw when sending the Buffer over a MessagePort
     channel.port1.postMessage(new SharedArrayBuffer(0));
     DataBuffer = SharedArrayBuffer;
-  } finally {
-    channel.port1.close();
-    channel.port2.close();
+  } catch (_) {
+    // NOOP
   }
+  channel.port1.close();
+  channel.port2.close();
 }
 
 const instances = new Map();

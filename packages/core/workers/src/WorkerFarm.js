@@ -75,6 +75,7 @@ export default class WorkerFarm extends EventEmitter {
   options: FarmOptions;
   run: HandleFunction;
   warmWorkers: number = 0;
+  readyWorkers: number = 0;
   workers: Map<number, Worker> = new Map();
   handles: Map<number, Handle> = new Map();
   sharedReferences: Map<number, mixed> = new Map();
@@ -200,7 +201,13 @@ export default class WorkerFarm extends EventEmitter {
 
     worker.on('request', data => this.processRequest(data, worker));
 
-    worker.on('ready', () => this.processQueue());
+    worker.on('ready', () => {
+      this.readyWorkers++;
+      if (this.readyWorkers === this.options.maxConcurrentWorkers) {
+        this.emit('ready');
+      }
+      this.processQueue();
+    });
     worker.on('response', () => this.processQueue());
 
     worker.on('error', err => this.onError(err, worker));

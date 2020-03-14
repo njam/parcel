@@ -37,6 +37,7 @@ import runtimeJs from '@parcel/runtime-js';
 import transformerBabel from '@parcel/transformer-babel';
 import transformerCss from '@parcel/transformer-css';
 import transformerHtml from '@parcel/transformer-html';
+import transformerInlineString from '@parcel/transformer-inline-string';
 import transformerJs from '@parcel/transformer-js';
 import transformerJson from '@parcel/transformer-json';
 import transformerPostcss from '@parcel/transformer-postcss';
@@ -56,6 +57,7 @@ const BUILTINS = {
   '@parcel/transformer-babel': transformerBabel,
   '@parcel/transformer-css': transformerCss,
   '@parcel/transformer-html': transformerHtml,
+  '@parcel/transformer-inline-string': transformerInlineString,
   '@parcel/transformer-js': transformerJs,
   '@parcel/transformer-json': transformerJson,
   '@parcel/transformer-postcss': transformerPostcss,
@@ -77,6 +79,7 @@ const BUILTINS = {
 //   '@parcel/transformer-babel': import('@parcel/transformer-babel'),
 //   '@parcel/transformer-css': import('@parcel/transformer-css'),
 //   '@parcel/transformer-html': import('@parcel/transformer-html'),
+//   '@parcel/transformer-inline-string': import('@parcel/transformer-inline-string'),
 //   '@parcel/transformer-js': import('@parcel/transformer-js'),
 //   '@parcel/transformer-json': import('@parcel/transformer-json'),
 //   '@parcel/transformer-postcss': import('@parcel/transformer-postcss'),

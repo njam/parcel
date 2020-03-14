@@ -15,7 +15,7 @@
     "@mischnic/codemirror-preact": "^0.0.5",
     "@mischnic/dot-svg": "^0.0.0",
     "@mischnic/pako": "^1.0.10",
-    "@parcel/config-default": "^2.0.0-alpha.3",
+    "@parcel/config-repl": "^2.0.0-alpha.3",
     "@parcel/core": "^2.0.0-alpha.3.2",
     "@parcel/fs": "^2.0.0-alpha.3",
     "@parcel/package-manager": "^2.0.0-alpha.3",

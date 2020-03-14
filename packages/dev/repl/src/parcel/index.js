@@ -22,7 +22,7 @@ const worker = wrap(
 //   },
 // };
 
-export const workerLoaded = worker.ready;
+export const workerReady = worker.ready;
 
 export function bundle(assets, options) {
   return worker.bundle(assets, options);

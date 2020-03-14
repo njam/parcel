@@ -19,7 +19,7 @@ import {
   loadState,
   // downloadBuffer
 } from './utils';
-import {bundle, workerLoaded} from './parcel/';
+import {bundle, workerReady} from './parcel/';
 
 function nthIndex(str, pat, n) {
   var L = str.length,
@@ -35,12 +35,12 @@ async function downloadZip() {
   //   downloadBuffer('Parcel-REPL.zip', await getZip());
 }
 
+const BUNDLING_READY = Symbol('BUNDLING_READY');
 const BUNDLING_RUNNING = Symbol('BUNDLING_RUNNING');
 const BUNDLING_FINISHED = Symbol('BUNDLING_FINISHED');
 
 const WORKER_STATE_LOADING = Symbol('WORKER_STATE_LOADING');
 const WORKER_STATE_SUCCESS = Symbol('WORKER_STATE_SUCCESS');
-const WORKER_STATE_ERROR = Symbol('WORKER_STATE_ERROR');
 
 const DEFAULT_PRESET = 'Javascript';
 
@@ -145,12 +145,12 @@ function App() {
     initialHashState.currentPreset || DEFAULT_PRESET,
   );
 
-  const [bundlingState, setBundlingState] = useState(BUNDLING_FINISHED);
+  const [bundlingState, setBundlingState] = useState(BUNDLING_READY);
   const [workerState, setWorkerState] = useState(WORKER_STATE_LOADING);
-  workerLoaded.then(
-    () => setWorkerState(WORKER_STATE_SUCCESS),
-    () => setWorkerState(WORKER_STATE_ERROR),
-  );
+  useEffect(async () => {
+    await workerReady;
+    setWorkerState(WORKER_STATE_SUCCESS);
+  }, []);
   const [output, setOutput] = useState();
 
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -351,10 +351,16 @@ function App() {
         <Notes />
       </div>
       <div class="row">
-        {workerState ? (
-          <div class="loadState ready">Parcel is ready ?</div>
+        {bundlingState === BUNDLING_READY ? (
+          workerState === WORKER_STATE_SUCCESS ? (
+            <div class="loadState ready">Parcel is ready</div>
+          ) : (
+            <div class="loadState loading">Starting up Parcel...</div>
+          )
+        ) : bundlingState === BUNDLING_FINISHED ? (
+          <div class="loadState ready">Bundling finished</div>
         ) : (
-          <div class="loadState loading">Parcel is being loaded...</div>
+          <div class="loadState loading">Bundling...</div>
         )}
         {(() => {
           if (bundlingState === BUNDLING_FINISHED) {

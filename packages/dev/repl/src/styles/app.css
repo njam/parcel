@@ -144,7 +144,7 @@ select {
 .row > .loadState {
   padding: 0.4em;
   text-align: center;
-  transition: background-color 0.7s;
+  transition: background-color 0.3s;
 }
 .row > .loadState.loading {
   background-color: orange;
